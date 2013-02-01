@@ -27,14 +27,6 @@
     return sharedInstance;
 }
 
-//- (id)init {
-//    if (self = [self init]) {
-////        [WXApi registerApp:kShareKitWeChatAppID];
-//    }
-//    
-//    return self;
-//}
-
 - (void)dealloc {
     self.sinaWeibo = nil;
     self.sinaWeiboAuthCompletionHandler = nil;
