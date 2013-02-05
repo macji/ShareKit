@@ -1,5 +1,5 @@
 # ShareKit
-目前支持 `Weibo SDK` 和 `WeChat SDK`
+目前支持 `Weibo SDK` , `WeChat SDK` , `QQ SDK`
 
 ## 如何使用
 
