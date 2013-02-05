@@ -7,7 +7,6 @@
 //
 
 #import "ShareKit.h"
-#import "AppDelegate.h"
 
 #import <objc/runtime.h>
 
@@ -37,6 +36,10 @@
     self.weChatSuccessHandler = nil;
     self.weChatFailureHandler = nil;
     
+    self.qqAppCallBackScheme = nil;
+    self.qqSuccessHandler = nil;
+    self.qqFailureHandler = nil;
+    
     [super dealloc];
 }
 
@@ -47,12 +50,17 @@
 }
 
 - (BOOL)handleOpenURL:(NSURL *)url {
+    NSLog(@"%@",[url absoluteString]);
     if (self.sinaWeibo && [[url scheme] isEqualToString:self.sinaWeibo.ssoCallbackScheme]) {
         return [self.sinaWeibo handleOpenURL:url];
     }
     
     if ([[url scheme] isEqualToString:self.weChatAppCallBackScheme]) {
         return [WXApi handleOpenURL:url delegate:self];
+    }
+    
+    if ([[url scheme] isEqualToString:self.qqAppCallBackScheme]) {
+        return [self qqHandleOpenURL:url];
     }
     
     return YES;
@@ -238,7 +246,7 @@
     req.bText = messageType == ShareKitWeChatMessageTypeText;
 
     if (messageType == ShareKitWeChatMessageTypeText) {
-        req.text = description;
+        req.text = title;
     } else {
         WXMediaMessage *message = [WXMediaMessage message];
         if (messageType == ShareKitWeChatMessageTypeImage) {
@@ -307,6 +315,88 @@
     
     self.weChatSuccessHandler = nil;
     self.weChatFailureHandler = nil;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+#pragma mark -
+#pragma mark QQ
+////////////////////////////////////////////////////////////////////////
+
+- (void)qqSetupWithAppKey:(NSString *)appKey {
+    self.qqAppCallBackScheme = appKey;
+    [QQApi registerPluginWithId:appKey];
+}
+
+- (BOOL)qqIsInstalled {
+    return [QQApi isQQInstalled];
+}
+
+- (void)qqSendWithTitle:(NSString *)title
+            description:(NSString *)description
+              thumbData:(NSData *)thumbData
+              targetURL:(NSString *)targetURL
+              mediaData:(NSData *)mediaData
+            messageType:(ShareKitQQMessageType)messageType
+                success:(ShareKitQQSuccessHandler)success
+                failure:(ShareKitQQFailureHandler)failure {
+    
+    self.qqSuccessHandler = success;
+    self.qqFailureHandler = failure;
+    
+    id object;
+    if (messageType == ShareKitQQMessageTypeNews) {
+        object = [QQApiNewsObject objectWithURL:[NSURL URLWithString:targetURL]
+                                          title:title
+                                    description:description
+                               previewImageData:thumbData];
+    }
+    
+    else if (messageType == ShareKitQQMessageTypeImage) {
+        object = [QQApiImageObject objectWithData:mediaData
+                                 previewImageData:thumbData
+                                            title:title
+                                      description:description];
+    }
+    
+    else if (messageType == ShareKitQQMessageTypeMusic) {
+        object = [QQApiAudioObject objectWithURL:[NSURL URLWithString:targetURL]
+                                           title:title
+                                     description:description
+                                previewImageData:thumbData];
+    }
+    
+    else if (messageType == ShareKitQQMessageTypeVideo) {
+        object = [QQApiVideoObject objectWithURL:[NSURL URLWithString:targetURL]
+                                           title:title
+                                     description:description
+                                previewImageData:thumbData];
+        
+    } else {
+        object = [QQApiTextObject objectWithText:title];
+    }
+    
+    QQApiMessage *msg = [QQApiMessage messageWithObject:object];
+    [QQApi sendMessage:msg];
+}
+
+- (BOOL)qqHandleOpenURL:(NSURL *)url {
+    QQApiMessage *msg = [QQApi handleOpenURL:url];
+    if (msg && msg.type == QQApiMessageTypeSendMessageToQQResponse) {
+        QQApiResultObject* resultObject = (QQApiResultObject*)msg.object;
+        if ([resultObject.error integerValue] == 0) {
+            self.qqSuccessHandler();
+        } else {
+            self.qqFailureHandler([NSError errorWithDomain:kShareKitDomain
+                                                      code:[resultObject.error integerValue]
+                                                  userInfo:[NSDictionary dictionaryWithObject:
+                                                            resultObject.errorDescription forKey:NSLocalizedDescriptionKey]]);
+        }
+        
+        self.qqSuccessHandler = nil;
+        self.qqFailureHandler = nil;
+    }
+    return YES;
 }
 
 @end

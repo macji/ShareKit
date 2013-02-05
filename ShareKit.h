@@ -9,6 +9,7 @@
 #import <Foundation/Foundation.h>
 #import "SinaWeibo.h"
 #import "WXApi.h"
+#import "QQApi/QQApi.h"
 
 
 typedef enum {
@@ -24,12 +25,23 @@ typedef enum {
 	ShareKitWeChatMessageTypeVideo
 } ShareKitWeChatMessageType;
 
+typedef enum {
+    ShareKitQQMessageTypeText,
+    ShareKitQQMessageTypeNews,
+    ShareKitQQMessageTypeImage,
+	ShareKitQQMessageTypeMusic,
+	ShareKitQQMessageTypeVideo
+} ShareKitQQMessageType;
+
 typedef void (^ShareKitSinaWeiboAuthCompletionHandler)(NSError *error);
 typedef void (^ShareKitSinaWeiboSuccessHandler)(void);
 typedef void (^ShareKitSinaWeiboFailureHandler)(NSError *error);
 
 typedef void (^ShareKitWeChatSuccessHandler)(BaseResp *response);
 typedef void (^ShareKitWeChatFailureHandler)(NSError *error);
+
+typedef void (^ShareKitQQSuccessHandler)(void);
+typedef void (^ShareKitQQFailureHandler)(NSError *error);
 
 @interface ShareKit : NSObject <SinaWeiboDelegate, SinaWeiboRequestDelegate, WXApiDelegate>
 
@@ -41,6 +53,10 @@ typedef void (^ShareKitWeChatFailureHandler)(NSError *error);
 @property (nonatomic, retain) NSString *weChatAppCallBackScheme;
 @property (nonatomic, copy) ShareKitWeChatSuccessHandler weChatSuccessHandler;
 @property (nonatomic, copy) ShareKitWeChatFailureHandler weChatFailureHandler;
+
+@property (nonatomic, retain) NSString *qqAppCallBackScheme;
+@property (nonatomic, copy) ShareKitQQSuccessHandler qqSuccessHandler;
+@property (nonatomic, copy) ShareKitQQFailureHandler qqFailureHandler;
 
 + (ShareKit *)sharedInstance;
 
@@ -84,5 +100,18 @@ typedef void (^ShareKitWeChatFailureHandler)(NSError *error);
                       scene:(ShareKitWeChatScene)scene
                     success:(ShareKitWeChatSuccessHandler)success
                     failure:(ShareKitWeChatFailureHandler)failure;
+
+// QQ
+- (void)qqSetupWithAppKey:(NSString *)appKey;
+- (BOOL)qqIsInstalled;
+- (void)qqSendWithTitle:(NSString *)title
+            description:(NSString *)description
+              thumbData:(NSData *)thumbData
+              targetURL:(NSString *)targetURL
+              mediaData:(NSData *)mediaData
+            messageType:(ShareKitQQMessageType)messageType
+                success:(ShareKitQQSuccessHandler)success
+                failure:(ShareKitQQFailureHandler)failure;
+
 
 @end
