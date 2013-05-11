@@ -246,7 +246,7 @@
     req.bText = messageType == ShareKitWeChatMessageTypeText;
 
     if (messageType == ShareKitWeChatMessageTypeText) {
-        req.text = title;
+        req.text = description;
     } else {
         WXMediaMessage *message = [WXMediaMessage message];
         if (messageType == ShareKitWeChatMessageTypeImage) {
